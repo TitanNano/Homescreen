@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.v29.AppTheme" parent="Base.v27.AppTheme">
+        <item name="android:enforceNavigationBarContrast">false</item>
+    </style>
+
+    <style name="AppTheme" parent="Base.v29.AppTheme" />
+</resources>

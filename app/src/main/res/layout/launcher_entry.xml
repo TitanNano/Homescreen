@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layoutDirection="ltr">
+    <data>
+        <import type="android.view.View" />
+        <variable name="item" type="com.example.homescreen.LauncherEntry" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="0dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:background="@drawable/primary_ripple">
+
+        <ImageView
+            android:visibility="@{item.icon != null ? View.VISIBLE : View.INVISIBLE}"
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="15dp"
+            android:scaleType="fitCenter"
+            android:src="@{item.icon, default=@drawable/icon_placeholder}"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <ImageView
+            android:layout_height="0dp"
+            android:layout_width="0dp"
+
+            android:visibility="@{item.ownerIcon != null ? View.VISIBLE : View.INVISIBLE}"
+            android:src="@{item.ownerIcon, default=@drawable/icon_placeholder}"
+            app:layout_constraintWidth_percent="0.25"
+            app:layout_constraintHeight_percent="0.25"
+            app:layout_constraintRight_toRightOf="@+id/imageView"
+            app:layout_constraintBottom_toBottomOf="@+id/imageView"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:shadowColor="#7F000000"
+            android:shadowRadius="2"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:singleLine="true"
+            android:text="@{item.name, default=Label}"
+            app:layout_constraintTop_toBottomOf="@+id/imageView" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
