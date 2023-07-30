@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.homescreen">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INSTALL_SHORTCUT" />
     <uses-permission android:name="android.permission.UNINSTALL_SHORTCUT" />
@@ -17,6 +16,7 @@
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
             android:taskAffinity="com.example.homescreen.settings"
+            android:exported="true"
             android:theme="@style/AppTheme.Settings">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,6 +26,7 @@
         </activity>
 
         <activity android:name=".MainActivity"
+            android:exported="true"
             android:taskAffinity="com.example.homescreen.launcher"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -39,5 +40,12 @@
             </intent-filter>
         </activity>
     </application>
+
+    <queries>
+        <intent>
+            <category android:name="android.intent.category.LAUNCHER" />
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
 
 </manifest>
