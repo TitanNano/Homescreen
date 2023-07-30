@@ -1,27 +1,37 @@
 package com.example.homescreen
 
+import android.animation.AnimatorSet
 import android.annotation.TargetApi
 import android.content.pm.LauncherApps
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.NestedScrollView
-import androidx.recyclerview.widget.RecyclerView
+import androidx.core.animation.doOnEnd
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
+import com.example.homescreen.databinding.MainActivityBinding
+import com.example.homescreen.views.SearchFragmentAdapter
 
+class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
 
-class MainActivity : AppCompatActivity() {
-
-    private var grid: RecyclerView? = null
     private val activeTasks: MutableList<ICancelTask> = mutableListOf()
+    private lateinit var launcherFragment: LauncherFragment
+    private var searchFragment: SearchFragment? = null
+    private lateinit var binding: MainActivityBinding
+
+    public val fragmentViewId get() = this.binding.root.id
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        this.launcherFragment = LauncherFragment(this)
+        this.binding = MainActivityBinding.inflate(this.layoutInflater)
 
-        this.grid = this.findViewById<RecyclerView>(R.id.appgrid)?.also {
-            it.adapter = LauncherEntryManager.get(this).makeLauncherEntryAdapter(this)
+        setContentView(this.binding.root)
+
+        this.supportFragmentManager.commit {
+            setReorderingAllowed(true)
+            add(binding.root.id, launcherFragment, "main")
         }
     }
 
@@ -29,9 +39,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
 
         LauncherEntryManager.get(this).entriesReady {
-            (this.grid?.layoutManager as GridLayoutManager).onceLayoutCompleted {
-                (this.grid?.parent as NestedScrollView).fullScroll(View.FOCUS_DOWN)
-            }
+            this.launcherFragment.scrollToBottom()
         }
     }
 
@@ -42,7 +50,7 @@ class MainActivity : AppCompatActivity() {
         val intent = this.intent
 
         if (intent.action != LauncherApps.ACTION_CONFIRM_PIN_SHORTCUT) {
-            (this.grid?.parent as NestedScrollView).fullScroll(View.FOCUS_DOWN)
+            this.launcherFragment.scrollToBottom()
             return
         }
 
@@ -56,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         request.shortcutInfo?.let {
             LauncherEntryManager.get(this).addShortcut(it)
                 .invokeOnCompletion {
-                    (grid?.parent as NestedScrollView).scrollTo(0, 0)
+                    this.launcherFragment.scrollToTop()
                 }
         }
 
@@ -73,5 +81,60 @@ class MainActivity : AppCompatActivity() {
 
             it.cancel(true)
         }
+    }
+
+    fun getLauncherEntryManager(): LauncherEntryManager {
+        return LauncherEntryManager.get(this)
+    }
+
+    fun blurLauncher(radius: Float) {
+        this.launcherFragment.blurLauncher(radius)
+    }
+
+    fun requireSearchFragment(): SearchFragment {
+        this.searchFragment?.let { return it }
+
+        val searchFragment = SearchFragment()
+
+        this.searchFragment = searchFragment
+        return searchFragment
+    }
+
+    // ------- Pull to search fragment adapter -------
+
+    override fun requireFragment(): Fragment {
+        return this.requireSearchFragment()
+    }
+
+    override fun createEnterAnimation(): AnimatorSet {
+        return this.requireSearchFragment().enterAnimation(reverse = false).also {
+            it.doOnEnd {
+                this.requireSearchFragment().focusInput()
+            }
+        }
+    }
+
+    override fun attachFragment() {
+        this.supportFragmentManager.apply {
+            commit {
+                val fragment = requireSearchFragment()
+                setReorderingAllowed(true)
+                add(fragmentViewId, fragment, "search")
+                addToBackStack(null)
+            }
+
+            executePendingTransactions()
+        }
+    }
+
+    override fun detachFragment() {
+        this.supportFragmentManager.commit {
+            val fragment = requireSearchFragment()
+            remove(fragment)
+        }
+    }
+
+    override fun popFragment() {
+        this.supportFragmentManager.popBackStack()
     }
 }

@@ -12,6 +12,7 @@ class LauncherEntryManager(val context: Context) {
     private var activeSortTask: Job? = null
     private var activeAssembleTask: Job? = null
     private val readyCallbackList: MutableList<suspend () -> Unit> = mutableListOf()
+    private val entitiesChangedCallbackList: MutableList<() -> Unit> = mutableListOf()
     private val adapters = mutableSetOf<WeakReference<LauncherEntryAdapter>>()
 
     var filterHiddenEntries = true
@@ -41,11 +42,11 @@ class LauncherEntryManager(val context: Context) {
 
             doSortEntries()
 
-            notifyDataSetChangeAsync()
+            notifyEntitiesChangedAsync()
             notifyEntriesReady()
         }.also {
-            it.invokeOnCompletion {
-                it?.let { throw it }
+            it.invokeOnCompletion { throwable ->
+                throwable?.let { t -> throw t }
             }
 
             this.activeAssembleTask = it
@@ -54,8 +55,9 @@ class LauncherEntryManager(val context: Context) {
 
     fun assembleEntries(): Job = this.assembleEntriesAsync()
 
-    private fun notifyDataSetChangeAsync() = MainScope().async {
+    private fun notifyEntitiesChangedAsync() = MainScope().async {
         adapters.forEach { it.get()?.notifyDataSetChanged() }
+        entitiesChangedCallbackList.forEach { it() }
     }
 
     private suspend fun doAssembleEntries() = withContext(Dispatchers.IO) {
@@ -87,7 +89,7 @@ class LauncherEntryManager(val context: Context) {
 
         return GlobalScope.async {
             doSortEntries()
-            notifyDataSetChangeAsync().await()
+            notifyEntitiesChangedAsync().await()
         }.also {
             this.activeSortTask = it
         }
@@ -99,7 +101,7 @@ class LauncherEntryManager(val context: Context) {
         val rawCurrentUsage = UsageDatabase.get(context).entryDao()
             .getAllUsage(System.currentTimeMillis() - HOURS_24)
 
-        val totalUsage = rawTotalUsage.map{ it.usage }.sum().toDouble()
+        val totalUsage = rawTotalUsage.map { it.usage }.sum().toDouble()
         val currentStatsMap = rawCurrentUsage
             .map { Pair(it.id, it.usage) }
             .toMap()
@@ -107,7 +109,8 @@ class LauncherEntryManager(val context: Context) {
         val statsMap = rawTotalUsage
             .map {
                 val currentUsage = currentStatsMap.get(it.id) ?: 0
-                val usage = Math.round((it.usage - currentUsage).toDouble() / totalUsage * 100) + currentUsage
+                val usage =
+                    Math.round((it.usage - currentUsage).toDouble() / totalUsage * 100) + currentUsage
 
                 Pair(it.id, usage)
             }.toMap()
@@ -128,15 +131,46 @@ class LauncherEntryManager(val context: Context) {
         this.readyCallbackList.add(callback)
     }
 
+    fun onEntitiesChanged(callback: () -> Unit) {
+        this.entitiesChangedCallbackList.add(callback)
+    }
+
     private suspend fun notifyEntriesReady() {
         readyCallbackList.forEach { it() }
+    }
+
+    fun searchEntries(query: String): List<LauncherEntry> {
+        val query = query.lowercase()
+
+        return this.entries.filter {
+            it.name.lowercase().contains(query) ||
+                    it.packageName.split(".", ignoreCase = true, limit = 3).let {
+                        if (it.size > 2) it.subList(1, 2) else it
+                    }.any { item ->
+                        item.contains(query)
+                    }
+        }.sortedBy {
+            val packageInfo = it.packageName.split(".", ignoreCase = true, limit = 3)
+            val org = packageInfo.getOrNull(1)
+            var packName = packageInfo.getOrNull(2)
+
+            if (it.name.lowercase().startsWith(query)) {
+                0
+            } else if (packName?.lowercase()?.startsWith(query) == true) {
+                1
+            } else if (org?.lowercase()?.startsWith(query) == true) {
+                2
+            } else {
+                3
+            }
+        }
     }
 
     companion object {
         private var instance: LauncherEntryManager? = null
 
-        const val HOURS_24: Long =  86400 * 1000
-        const val MONTH_3:  Long = HOURS_24 * 30 * 3
+        const val HOURS_24: Long = 86400 * 1000
+        const val MONTH_3: Long = HOURS_24 * 30 * 3
 
         fun get(context: Context): LauncherEntryManager {
             this.instance?.let { return it }

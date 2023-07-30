@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.v31.AppTheme" parent="Base.v29.AppTheme">
+        <item name="android:windowBlurBehindEnabled">true</item>
+    </style>
+
+    <style name="AppTheme" parent="Base.v31.AppTheme" />
+</resources>

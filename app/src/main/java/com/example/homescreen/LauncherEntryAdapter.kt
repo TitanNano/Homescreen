@@ -19,6 +19,7 @@ import com.example.homescreen.tasks.LaunchApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import java.lang.Integer.min
 
 open class LauncherEntryViewHolder(itemView: View) : RecyclerView.ViewHolder((itemView)), View.OnClickListener, View.OnLongClickListener,
     PopupMenu.OnMenuItemClickListener {
@@ -163,7 +164,7 @@ open class LauncherEntryAdapter(
     }
 
     override fun getItemCount(): Int {
-        return this.entries.count()
+        return min(this.entries.count(), 8)
     }
 
     override fun getItemId(position: Int): Long {
