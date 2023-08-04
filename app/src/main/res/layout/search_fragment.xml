@@ -4,51 +4,60 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <variable name="fragment" type="com.example.homescreen.SearchFragment" />
+
+        <variable
+            name="fragment"
+            type="com.example.homescreen.SearchFragment" />
     </data>
 
-    <com.example.homescreen.views.OverlayView
+    <eightbitlab.com.blurview.BlurView
+        android:id="@+id/blur_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#59FFFFFF">
+        app:blurOverlayColor="@{fragment.overlayColor}">
 
-        <EditText
-            android:id="@+id/search_bar"
-            style="@android:style/Widget.EditText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="15dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            android:background="@android:color/white"
-            android:ems="10"
-            android:inputType="text"
-            android:padding="12dp"
-            android:text="@={fragment.searchText}"
-            android:textSize="20sp"
-            android:autofillHints=""
-            android:hint="Search for an App"
-            android:afterTextChanged="@{fragment::onSearchTextChange}"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <com.example.homescreen.views.OverlayView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layoutMode="clipBounds"
-            android:orientation="vertical"
-            android:padding="0dp"
-            app:layoutManager=".GridLayoutManager"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:spanCount="4"
-            android:adapter="@{fragment.searchResultsAdapter}"
-            tools:itemCount="4"
-            tools:listitem="@layout/launcher_entry" />
-    </com.example.homescreen.views.OverlayView>
+            <EditText
+                android:id="@+id/search_bar"
+                style="@android:style/Widget.EditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:afterTextChanged="@{fragment::onSearchTextChange}"
+                android:autofillHints=""
+                android:background="@android:color/white"
+                android:ems="10"
+                android:hint="Search for an App"
+                android:inputType="text"
+                android:padding="12dp"
+                android:text="@={fragment.searchText}"
+                android:textSize="20sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="16dp"
+                android:adapter="@{fragment.searchResultsAdapter}"
+                android:layoutMode="clipBounds"
+                android:orientation="vertical"
+                android:padding="0dp"
+                app:layoutManager=".GridLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:spanCount="4"
+                tools:itemCount="4"
+                tools:listitem="@layout/launcher_entry" />
+        </com.example.homescreen.views.OverlayView>
+    </eightbitlab.com.blurview.BlurView>
 </layout>

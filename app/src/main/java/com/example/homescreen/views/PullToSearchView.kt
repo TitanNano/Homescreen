@@ -38,14 +38,7 @@ class PullToSearchView(
 
     constructor(context: Context, attrs: AttributeSet?): this(context, attrs, 0)
 
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        Log.i("pull_search.dispatch", "touch event dispatched")
-
-        return super.dispatchTouchEvent(ev)
-    }
-
     fun onHandleTouch(ev: MotionEvent?): Boolean {
-        Log.i("pull_search.touch_event", "intercepting touch event")
         val result = when (ev?.action) {
             MotionEvent.ACTION_UP -> this.onStopSearchPull()
             else -> false
@@ -54,8 +47,6 @@ class PullToSearchView(
         if (result) {
             return true
         }
-
-        Log.i("pull_search", "calling gesture detector ev=${ev}")
 
         if (ev != null && this.gestureDetector.onTouchEvent(ev)) {
             return true
@@ -81,10 +72,6 @@ class PullToSearchView(
     }
 
     private fun onDown(): Boolean {
-        Log.i(
-            "pull_search.down",
-            "possible start of gesture"
-        )
         return false
     }
 
@@ -95,8 +82,6 @@ class PullToSearchView(
         distanceY: Float
     ): Boolean {
         val adapter = this.adapter ?: return false
-
-        Log.i("pull_search.scroll", "scroll event")
 
         if (this.searchFragmentAnimation == null) {
             val animation = adapter.apply {
@@ -112,11 +97,6 @@ class PullToSearchView(
         val yOffset = (e2.y - e1.y).coerceAtLeast(0f)
         val yOffsetPercent = (yOffset / resources.displayMetrics.density / 200).coerceAtMost(1f)
         val playTime = (searchFragmentAnimation.totalDuration * yOffsetPercent).toLong()
-
-        Log.i(
-            "pull_search.scroll",
-            "y=${yOffset}, playTime=${playTime}, distanceY=${distanceY}, distanceX=${distanceX}"
-        )
 
         searchFragmentAnimation.currentPlayTime = playTime
         return true
