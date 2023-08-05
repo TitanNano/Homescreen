@@ -290,8 +290,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     companion object {
         @BindingAdapter("blurOverlayColor")
         @JvmStatic
-        fun udpateOverlayColor(view: BlurView, color: Int) {
-            Log.i("pull_search.overlay", "updating overlay color: ${color}")
+        fun updateOverlayColor(view: BlurView, color: Int) {
+            Log.i("pull_search.overlay", "updating overlay color: $color")
             view.setOverlayColor(color)
         }
     }

@@ -16,15 +16,22 @@ import com.example.homescreen.views.SearchFragmentAdapter
 class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
 
     private val activeTasks: MutableList<ICancelTask> = mutableListOf()
-    private lateinit var launcherFragment: LauncherFragment
-    private var searchFragment: SearchFragment? = null
+
     private lateinit var binding: MainActivityBinding
+    private lateinit var fragmentFactory: LauncherFragmentFactory
+    private lateinit var launcherFragment: LauncherFragment
+
+    private var searchFragment: SearchFragment? = null
 
     public val fragmentViewId get() = this.binding.root.id
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        this.fragmentFactory = LauncherFragmentFactory(this)
+        this.supportFragmentManager.fragmentFactory = this.fragmentFactory
+
         super.onCreate(savedInstanceState)
-        this.launcherFragment = LauncherFragment(this)
+
+        this.launcherFragment = fragmentFactory.instantiate(classLoader)
         this.binding = MainActivityBinding.inflate(this.layoutInflater)
 
         setContentView(this.binding.root)
@@ -94,7 +101,7 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
     fun requireSearchFragment(): SearchFragment {
         this.searchFragment?.let { return it }
 
-        val searchFragment = SearchFragment()
+        val searchFragment: SearchFragment = this.fragmentFactory.instantiate(this.classLoader)
 
         this.searchFragment = searchFragment
         return searchFragment
