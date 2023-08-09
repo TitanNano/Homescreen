@@ -1,17 +1,17 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="Base.AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Base.AppTheme.Light" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/material_dynamic_primary40</item>
+        <item name="colorOnPrimary">@color/material_dynamic_primary100</item>
+        <item name="colorSecondary">@color/material_dynamic_secondary40</item>
+        <item name="colorOnSecondary">@android:color/white</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowShowWallpaper">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:fitsSystemWindows">false</item>
-        <item name="android:colorEdgeEffect">@color/colorPrimary</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowIsTranslucent">true</item>
@@ -21,15 +21,41 @@
         <item name="actionOverflowMenuStyle">@style/Widget.MaterialComponents.PopupMenu.Overflow</item>
     </style>
 
-    <style name="AppTheme" parent="Base.AppTheme" />
+    <style name="AppTheme.Light" parent="Base.AppTheme.Light" />
 
-    <style name="Base.AppTheme.Settings" parent="Base.AppTheme">
-        <item name="android:statusBarColor">@color/colorPrimary</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">@android:color/black</item>
-        <item name="android:windowShowWallpaper">false</item>
-        <item name="android:windowBackground">@color/design_default_color_background</item>
+    <style name="AppTheme" parent="AppTheme.Light" />
+
+    <style name="Base.AppTheme.Light.Settings" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/material_dynamic_primary40</item>
+        <item name="colorOnPrimary">@color/material_dynamic_primary100</item>
+        <item name="colorPrimaryContainer">@color/material_dynamic_primary90</item>
+        <item name="colorOnPrimaryContainer">@color/material_dynamic_neutral10</item>
+        <item name="colorSecondary">@color/material_dynamic_secondary40</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSecondaryContainer">@color/material_dynamic_secondary100</item>
+        <item name="colorOnSecondaryContainer">@color/material_dynamic_secondary10</item>
+        <item name="colorTertiary">@color/material_dynamic_tertiary40</item>
+        <item name="colorOnTertiary">@color/material_dynamic_tertiary100</item>
+        <item name="colorTertiaryContainer">@color/material_dynamic_tertiary90</item>
+        <item name="colorOnTertiaryContainer">@color/material_dynamic_tertiary10</item>
+        <item name="colorError">@color/design_default_color_error</item>
+        <item name="colorOnErrorContainer">@color/material_harmonized_color_on_error_container</item>
+        <item name="android:colorBackground">@color/material_dynamic_primary99</item>
+        <item name="colorOnBackground">@color/material_dynamic_neutral10</item>
+        <item name="colorSurface">@color/material_dynamic_primary99</item>
+        <item name="colorOnSurface">@color/material_dynamic_neutral10</item>
+        <item name="colorSurfaceVariant">@color/material_dynamic_neutral_variant90</item>
+        <item name="colorOnSurfaceVariant">@color/material_dynamic_neutral_variant30</item>
+        <item name="colorOutline">@color/material_dynamic_neutral_variant50</item>
+        <item name="colorOnSurfaceInverse">@color/material_dynamic_neutral95</item>
+        <item name="colorSurfaceInverse">@color/material_dynamic_neutral20</item>
+        <item name="colorPrimaryInverse">@color/material_dynamic_primary80</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="AppTheme.Settings" parent="Base.AppTheme.Settings"></style>
+    <style name="AppTheme.Light.Settings" parent="Base.AppTheme.Light.Settings" />
+
+    <style name="AppTheme.Settings" parent="AppTheme.Light.Settings"/>
 </resources>

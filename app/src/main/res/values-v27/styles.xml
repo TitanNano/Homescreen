@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Base.v27.AppTheme" parent="Base.AppTheme">
+    <style name="Base.v27.AppTheme.Light" parent="Base.AppTheme.Light">
         <item name="android:windowLightNavigationBar">false</item>
     </style>
 
-    <style name="AppTheme" parent="Base.v27.AppTheme" />
+    <style name="AppTheme.Light" parent="Base.v27.AppTheme.Light" />
 
-    <style name="Base.v27.AppTheme.Settings" parent="Base.AppTheme.Settings">
+    <style name="AppTheme" parent="AppTheme.Light" />
+
+    <style name="Base.v27.AppTheme.Light.Settings" parent="Base.AppTheme.Light.Settings">
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:navigationBarColor">@color/design_default_color_background</item>
-        <item name="android:navigationBarDividerColor">@color/design_default_color_background</item>
     </style>
 
-    <style name="AppTheme.Settings" parent="Base.v27.AppTheme.Settings"></style>
+    <style name="AppTheme.Light.Settings" parent="Base.v27.AppTheme.Light.Settings"></style>
+
+    <style name="AppTheme.Settings" parent="AppTheme.Light.Settings"></style>
 </resources>

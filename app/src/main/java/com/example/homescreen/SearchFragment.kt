@@ -12,6 +12,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -50,8 +51,9 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     private val searchResults: MutableList<LauncherEntry> = mutableListOf()
     val searchResultsAdapter = SearchResultAdapter(this.searchResults)
     private val itemCount = 4
-    private val overlayColorDrawable = Color.parseColor("#59FFFFFF").toDrawable()
-    var overlayColor = ObservableInt(overlayColorDrawable.color)
+    private lateinit var overlayColorDrawable: ColorDrawable
+    val overlayColor: ObservableInt = ObservableInt(0)
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -96,6 +98,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
                 this.searchEntries()
             }
         }
+
+        this.overlayColorDrawable = resources.getDrawable(R.drawable.search_background_overlay, requireContext().theme) as ColorDrawable
 
         if (!Environment.isExternalStorageManager()) {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -153,7 +157,6 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
                         Bitmap.createBitmap(it, 0, statusBar, it.width, it.height - statusBar)
                     }.toDrawable(resources)
             }.apply {
-                val activity = requireActivity()
                 val scaleFactor = 5.625
                 val height = frame.height()
                 val width = frame.width()
@@ -179,7 +182,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
         var searchStart = -100f * resources.displayMetrics.density
         var searchEnd = 0f * resources.displayMetrics.density
         var bgStart = 0
-        var bgEnd = 255
+        var bgEnd = 127
 
         if (reverse) {
             blurStart = blurEnd.also { blurEnd = blurStart }

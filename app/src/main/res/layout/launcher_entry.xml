@@ -16,7 +16,6 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="64dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/primary_ripple"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -25,6 +24,7 @@
                 android:id="@+id/imageView"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
+                android:background="@drawable/primary_ripple"
                 android:scaleType="fitCenter"
                 android:src="@{item.icon, default=@drawable/icon_placeholder}"
                 android:visibility="@{item.icon != null ? View.VISIBLE : View.INVISIBLE}"
