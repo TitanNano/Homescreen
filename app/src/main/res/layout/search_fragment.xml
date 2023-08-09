@@ -45,7 +45,8 @@
                     android:padding="12dp"
                     android:text="@={fragment.searchText}"
                     android:textSize="20sp"
-                    xxbackground="@android:color/white"
+                    android:id="@+id/search_input"
+                    android:imeOptions="actionNone"
                     />
 
             </com.google.android.material.textfield.TextInputLayout>

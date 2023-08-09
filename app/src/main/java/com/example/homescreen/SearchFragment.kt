@@ -263,7 +263,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
         this.binding.searchBar.requestFocus()
         val imm = this.requireContext().getSystemService(InputMethodManager::class.java) ?: return
 
-        imm.showSoftInput(this.binding.searchBar, 0)
+        imm.showSoftInput(this.binding.searchInput, 0)
     }
 
     override fun onAttach(context: Context) {
