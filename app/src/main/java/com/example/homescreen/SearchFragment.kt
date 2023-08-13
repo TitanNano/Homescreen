@@ -9,7 +9,6 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
@@ -35,8 +34,6 @@ import androidx.databinding.BindingAdapter
 import androidx.databinding.ObservableInt
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
-import androidx.transition.Transition
-import androidx.transition.TransitionValues
 import com.example.homescreen.databinding.LauncherEntryBinding
 import com.example.homescreen.databinding.SearchFragmentBinding
 import com.example.homescreen.tasks.LaunchApplication
@@ -65,29 +62,6 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     ): View {
         this.binding = SearchFragmentBinding.inflate(inflater)
         this.binding.fragment = this
-
-        this.returnTransition = object : Transition() {
-            override fun captureStartValues(transitionValues: TransitionValues) {
-            }
-
-            override fun captureEndValues(transitionValues: TransitionValues) {
-            }
-
-            override fun isTransitionRequired(
-                startValues: TransitionValues?,
-                endValues: TransitionValues?
-            ): Boolean {
-                return true
-            }
-
-            override fun createAnimator(
-                sceneRoot: ViewGroup,
-                startValues: TransitionValues?,
-                endValues: TransitionValues?
-            ): Animator {
-                return this@SearchFragment.enterAnimation(reverse = true)
-            }
-        }
 
         return this.binding.root
     }
@@ -193,7 +167,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     }
 
     fun enterAnimation(reverse: Boolean): AnimatorSet {
-        val duration: Long = 500
+        val duration: Long = 400
 
         var blurStart = 0.001f
         var blurEnd = 10f
@@ -314,6 +288,14 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
         val height = compatInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
 
         this.keyboardHeight.set(height)
+    }
+
+    override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): Animator? {
+        if (!enter) {
+            return this.enterAnimation(true)
+        }
+
+        return super.onCreateAnimator(transit, enter, nextAnim)
     }
 
     companion object {
