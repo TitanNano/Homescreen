@@ -23,11 +23,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
+import android.view.WindowInsetsAnimation
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.scale
+import androidx.core.view.WindowInsetsCompat
 import androidx.databinding.BindingAdapter
 import androidx.databinding.ObservableInt
 import androidx.fragment.app.Fragment
@@ -53,7 +56,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     private val itemCount = 4
     private lateinit var overlayColorDrawable: ColorDrawable
     val overlayColor: ObservableInt = ObservableInt(0)
-
+    val keyboardHeight: ObservableInt = ObservableInt(0)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -99,7 +102,22 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
             }
         }
 
-        this.overlayColorDrawable = resources.getDrawable(R.drawable.search_background_overlay, requireContext().theme) as ColorDrawable
+        this.overlayColorDrawable = resources.getDrawable(
+            R.drawable.search_background_overlay,
+            requireContext().theme
+        ) as ColorDrawable
+
+        this.requireActivity().window.decorView.setWindowInsetsAnimationCallback(object :
+            WindowInsetsAnimation.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            override fun onProgress(
+                insets: WindowInsets,
+                runningAnimations: MutableList<WindowInsetsAnimation>
+            ): WindowInsets {
+                this@SearchFragment.updateKeyboardHeight(insets)
+                return insets
+            }
+
+        })
 
         if (!Environment.isExternalStorageManager()) {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -288,6 +306,14 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
         }.let {
             this.overlayColor.set(it)
         }
+    }
+
+
+    fun updateKeyboardHeight(insets: WindowInsets) {
+        val compatInsets = WindowInsetsCompat.toWindowInsetsCompat(insets)
+        val height = compatInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+
+        this.keyboardHeight.set(height)
     }
 
     companion object {

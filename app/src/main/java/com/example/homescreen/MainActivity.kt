@@ -114,8 +114,12 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
     }
 
     override fun createEnterAnimation(): AnimatorSet {
-        return this.requireSearchFragment().enterAnimation(reverse = false).also {
-            it.doOnEnd {
+        return this.requireSearchFragment().enterAnimation(reverse = false).also { set ->
+            set.doOnEnd {
+                if (requireSearchFragment().isHidden) {
+                    return@doOnEnd
+                }
+
                 this.requireSearchFragment().focusInput()
             }
         }

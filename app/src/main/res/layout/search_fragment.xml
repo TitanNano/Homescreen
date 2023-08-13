@@ -17,6 +17,7 @@
         app:blurOverlayColor="@{fragment.overlayColor}">
 
         <com.example.homescreen.views.OverlayView
+            android:paddingBottom="@{fragment.keyboardHeight}"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
