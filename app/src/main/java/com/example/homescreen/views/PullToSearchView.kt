@@ -105,6 +105,8 @@ class PullToSearchView(
         val adapter = this.adapter ?: return false
         val searchFragmentAnimation = this.searchFragmentAnimation
 
+        adapter.clearCanceled()
+
         if (searchFragmentAnimation === null) {
             adapter.detachFragment()
             return false
