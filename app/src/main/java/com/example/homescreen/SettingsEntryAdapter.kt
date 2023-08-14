@@ -29,6 +29,10 @@ class SettingsEntryAdapter(
         return SettingsEntryViewHolder(view.root)
     }
 
+    override fun getItemCount(): Int {
+        return this.entries.count()
+    }
+
     override fun getItemLayout(parent: View): Int {
         if (parent.id == R.id.applist) {
             return R.layout.list_item_settings
