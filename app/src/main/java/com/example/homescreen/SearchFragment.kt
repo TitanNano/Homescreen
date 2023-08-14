@@ -54,6 +54,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     private lateinit var overlayColorDrawable: ColorDrawable
     val overlayColor: ObservableInt = ObservableInt(0)
     val keyboardHeight: ObservableInt = ObservableInt(0)
+    var enableExitAnimation = false
+    var isCanceled = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -291,7 +293,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     }
 
     override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): Animator? {
-        if (!enter) {
+        if (!enter && enableExitAnimation) {
+            enableExitAnimation = false
             return this.enterAnimation(true)
         }
 

@@ -114,13 +114,18 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
     }
 
     override fun createEnterAnimation(): AnimatorSet {
-        return this.requireSearchFragment().enterAnimation(reverse = false).also { set ->
+        val searchFragment = this.requireSearchFragment()
+
+        return searchFragment.enterAnimation(reverse = false).also { set ->
             set.doOnEnd {
-                if (requireSearchFragment().isHidden) {
+                if (searchFragment.isCanceled) {
                     return@doOnEnd
                 }
 
-                this.requireSearchFragment().focusInput()
+                searchFragment.apply {
+                    enableExitAnimation = true
+                    focusInput()
+                }
             }
         }
     }
@@ -147,5 +152,13 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
 
     override fun popFragment() {
         this.supportFragmentManager.popBackStack()
+    }
+
+    override fun clearCanceled() {
+        this.requireSearchFragment().isCanceled = false
+    }
+
+    override fun setCanceled() {
+        this.requireSearchFragment().isCanceled = true
     }
 }

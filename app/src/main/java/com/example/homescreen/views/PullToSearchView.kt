@@ -3,7 +3,6 @@ package com.example.homescreen.views
 import android.animation.AnimatorSet
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -115,8 +114,13 @@ class PullToSearchView(
             searchFragmentAnimation.currentPlayTime.toFloat() / searchFragmentAnimation.totalDuration.toFloat()
 
         if (progess == 0f) {
+            adapter.setCanceled()
             searchFragmentAnimation.apply {
                 cancel()
+
+                doOnEnd {
+                    adapter.clearCanceled()
+                }
             }
 
             this.searchFragmentAnimation = null
@@ -126,12 +130,14 @@ class PullToSearchView(
         }
 
         if (progess < 0.5f) {
+            adapter.setCanceled()
             searchFragmentAnimation.apply {
                 reverse()
                 resume()
 
                 doOnEnd {
                     adapter.detachFragment()
+                    adapter.clearCanceled()
                 }
             }
 
@@ -153,4 +159,6 @@ interface SearchFragmentAdapter {
     fun attachFragment()
     fun detachFragment()
     fun popFragment()
+    fun setCanceled()
+    fun clearCanceled()
 }
