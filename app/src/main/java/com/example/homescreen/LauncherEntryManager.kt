@@ -154,7 +154,7 @@ class LauncherEntryManager(val context: Context) {
             val org = packageInfo.getOrNull(1)
             var packName = packageInfo.getOrNull(2)
 
-            if (it.name.lowercase().startsWith(query)) {
+            if (it.name.split("\\s".toRegex()).any { word -> word.lowercase().startsWith(query) }) {
                 0
             } else if (packName?.lowercase()?.startsWith(query) == true) {
                 1
