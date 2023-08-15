@@ -16,11 +16,9 @@ class SettingsActivity : AppCompatActivity() {
         DynamicColors.applyToActivityIfAvailable(this)
 
         this.appList = this.findViewById<RecyclerView>(R.id.applist).apply {
-            this.adapter = LauncherEntryManager.get(context)
-                .apply {
-                    filterHiddenEntries = false
-                    assembleEntries()
-                }.makeSettingsEntryAdapter(context)
+            this.adapter = LauncherEntryManager
+                .get(context)
+                .makeSettingsEntryAdapter(context)
         }
     }
 }

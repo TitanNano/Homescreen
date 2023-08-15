@@ -8,14 +8,13 @@ import java.lang.ref.WeakReference
 
 class LauncherEntryManager(val context: Context) {
     private val entries: MutableList<LauncherEntry> = mutableListOf()
+    private val allEntries: MutableList<LauncherEntry> = mutableListOf()
 
     private var activeSortTask: Job? = null
     private var activeAssembleTask: Job? = null
     private val readyCallbackList: MutableList<suspend () -> Unit> = mutableListOf()
     private val entitiesChangedCallbackList: MutableList<() -> Unit> = mutableListOf()
     private val adapters = mutableSetOf<WeakReference<LauncherEntryAdapter>>()
-
-    var filterHiddenEntries = true
 
     fun makeLauncherEntryAdapter(context: Context): LauncherEntryAdapter {
         val adapter = LauncherEntryAdapter(this.entries, context)
@@ -26,7 +25,7 @@ class LauncherEntryManager(val context: Context) {
     }
 
     fun makeSettingsEntryAdapter(context: Context): SettingsEntryAdapter {
-        val adapter = SettingsEntryAdapter(this.entries, context)
+        val adapter = SettingsEntryAdapter(this.allEntries, context)
 
         this.adapters.add(WeakReference(adapter))
 
@@ -36,14 +35,24 @@ class LauncherEntryManager(val context: Context) {
     private fun assembleEntriesAsync(): Deferred<Unit> {
         this.activeAssembleTask?.cancel()
 
-        return GlobalScope.async {
-            entries.clear()
-            entries.addAll(doAssembleEntries())
+        return runBlocking {
+            async {
+                doAssembleEntries().let {
+                    allEntries.apply {
+                        clear()
+                        addAll(it.first)
+                    }
+                    entries.apply {
+                        clear()
+                        addAll(it.second)
+                    }
+                }
 
-            doSortEntries()
+                doSortEntries()
 
-            notifyEntitiesChangedAsync()
-            notifyEntriesReady()
+                notifyEntitiesChangedAsync()
+                notifyEntriesReady()
+            }
         }.also {
             it.invokeOnCompletion { throwable ->
                 throwable?.let { t -> throw t }
@@ -77,11 +86,11 @@ class LauncherEntryManager(val context: Context) {
 
         launcherEntries.addAll(jobs.awaitAll())
 
-        launcherEntries.filter {
+        Pair(launcherEntries, launcherEntries.filter {
             it.loadConfig(context)
 
-            !filterHiddenEntries || !it.config!!.hidden
-        }
+            !it.config!!.hidden
+        })
     }
 
     fun sortEntries(): Deferred<Unit> {
