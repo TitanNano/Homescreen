@@ -96,9 +96,11 @@ class LauncherEntryManager(val context: Context) {
     fun sortEntries(): Deferred<Unit> {
         this.activeSortTask?.cancel()
 
-        return GlobalScope.async {
-            doSortEntries()
-            notifyEntitiesChangedAsync().await()
+        return runBlocking {
+            async {
+                doSortEntries()
+                notifyEntitiesChangedAsync().await()
+            }
         }.also {
             this.activeSortTask = it
         }
@@ -148,8 +150,8 @@ class LauncherEntryManager(val context: Context) {
         readyCallbackList.forEach { it() }
     }
 
-    fun searchEntries(query: String): List<LauncherEntry> {
-        val query = query.lowercase()
+    fun searchEntries(queryInput: String): List<LauncherEntry> {
+        val query = queryInput.lowercase()
 
         return this.entries.filter {
             it.name.lowercase().contains(query) ||
