@@ -215,7 +215,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     }
 
     private fun searchEntries() {
-        val oldCount = this.searchResults.size
+        val oldResults = this.searchResults.toList()
+        val oldCount = oldResults.size
         this.searchResults.clear()
 
         if (this.searchText.isEmpty()) {
@@ -246,7 +247,13 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
             )
         }
 
-        this.searchResultsAdapter.notifyItemRangeChanged(0, oldCount)
+        oldResults.forEachIndexed { index, launcherEntry ->
+            if (this.searchResults.getOrNull(index) == null || this.searchResults[index].id == launcherEntry.id) {
+                return@forEachIndexed
+            }
+
+            this.searchResultsAdapter.notifyItemChanged(index)
+        }
     }
 
     fun onSearchTextChange(editable: Editable?) {
