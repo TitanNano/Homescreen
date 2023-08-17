@@ -29,6 +29,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.AppCompatEditText
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.scale
 import androidx.core.view.WindowInsetsCompat
@@ -91,7 +92,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
             }
         }
 
-        this.overlayColorDrawable = resources.getDrawable(
+        this.overlayColorDrawable = ResourcesCompat.getDrawable(
+            resources,
             R.drawable.search_background_overlay,
             requireContext().theme
         ) as ColorDrawable
