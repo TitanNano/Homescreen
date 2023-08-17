@@ -47,12 +47,14 @@
                     android:text="@={fragment.searchText}"
                     android:textSize="20sp"
                     android:id="@+id/search_input"
-                    android:imeOptions="actionNone"
+                    android:imeOptions="actionGo"
+                    app:onKeyListener="@{fragment::onKey}"
                     />
 
             </com.google.android.material.textfield.TextInputLayout>
 
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/results"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="16dp"

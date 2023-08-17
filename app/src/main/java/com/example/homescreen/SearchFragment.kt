@@ -19,6 +19,7 @@ import android.os.Environment
 import android.provider.Settings
 import android.text.Editable
 import android.util.Log
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +28,7 @@ import android.view.WindowInsetsAnimation
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.scale
 import androidx.core.view.WindowInsetsCompat
@@ -56,6 +58,17 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     val keyboardHeight: ObservableInt = ObservableInt(0)
     var enableExitAnimation = false
     var isCanceled = false
+
+    fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode != KeyEvent.KEYCODE_ENTER) {
+            return false
+        }
+
+        val viewHolder = this@SearchFragment.binding.results.findViewHolderForAdapterPosition(0) ?: return false
+
+        (viewHolder as SearchResultViewHolder).onClick(viewHolder.itemView)
+        return true
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -315,6 +328,12 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
             Log.i("pull_search.overlay", "updating overlay color: $color")
             view.setOverlayColor(color)
         }
+
+        @BindingAdapter("app:onKeyListener")
+        @JvmStatic
+        fun setOnKeyListener(view: AppCompatEditText, listener: View.OnKeyListener) {
+            view.setOnKeyListener(listener)
+        }
     }
 }
 
@@ -370,7 +389,7 @@ class SearchResultViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
         }
     }
 
-    private fun onClick(view: View?) {
+    fun onClick(view: View?) {
         if (this.layoutPosition == RecyclerView.NO_POSITION || view == null) {
             return
         }
