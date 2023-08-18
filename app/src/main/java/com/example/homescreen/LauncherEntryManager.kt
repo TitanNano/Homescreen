@@ -5,6 +5,7 @@ import android.content.pm.ShortcutInfo
 import com.example.homescreen.db.UsageDatabase
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
+import kotlin.math.roundToInt
 
 class LauncherEntryManager(val context: Context) {
     private val entries: MutableList<LauncherEntry> = mutableListOf()
@@ -114,22 +115,19 @@ class LauncherEntryManager(val context: Context) {
         val rawCurrentUsage = UsageDatabase.get(context).entryDao()
             .getAllUsage(System.currentTimeMillis() - HOURS_24)
 
-        val totalUsage = rawTotalUsage.map { it.usage }.sum().toDouble()
-        val currentStatsMap = rawCurrentUsage
-            .map { Pair(it.id, it.usage) }
-            .toMap()
+        val totalUsage = rawTotalUsage.sumOf { it.usage }.toDouble()
+        val currentStatsMap = rawCurrentUsage.associate { Pair(it.id, it.usage) }
 
-        val statsMap = rawTotalUsage
-            .map {
-                val currentUsage = currentStatsMap.get(it.id) ?: 0
-                val usage =
-                    Math.round((it.usage - currentUsage).toDouble() / totalUsage * 100) + currentUsage
+        val statsMap = rawTotalUsage.associate {
+            val currentUsage = currentStatsMap[it.id] ?: 0
+            val usage =
+                ((it.usage - currentUsage).toDouble() / totalUsage * 100).roundToInt() + currentUsage
 
-                Pair(it.id, usage)
-            }.toMap()
+            Pair(it.id, usage)
+        }
 
         entries.onEach {
-            it.score = statsMap.get(it.id) ?: 0
+            it.score = statsMap[it.id] ?: 0
         }.sortByDescending { it.score }
     }
 
@@ -156,15 +154,16 @@ class LauncherEntryManager(val context: Context) {
 
         return this.entries.filter {
             it.name.lowercase().contains(query) ||
-                    it.packageName.split(".", ignoreCase = true, limit = 3).let {
-                        if (it.size > 2) it.subList(1, 2) else it
-                    }.any { item ->
-                        item.contains(query)
-                    }
+                    it.packageName.split(".", ignoreCase = true, limit = 3)
+                        .let { parts ->
+                            if (parts.size > 2) parts.subList(1, 2) else parts
+                        }.any { item ->
+                            item.contains(query)
+                        }
         }.sortedBy {
             val packageInfo = it.packageName.split(".", ignoreCase = true, limit = 3)
             val org = packageInfo.getOrNull(1)
-            var packName = packageInfo.getOrNull(2)
+            val packName = packageInfo.getOrNull(2)
 
             if (it.name.split("\\s".toRegex()).any { word -> word.lowercase().startsWith(query) }) {
                 0
@@ -194,6 +193,7 @@ class LauncherEntryManager(val context: Context) {
             return LauncherEntryManager(context).also {
                 this.instance = it
 
+                @Suppress("DeferredResultUnused")
                 it.assembleEntriesAsync()
             }
         }
