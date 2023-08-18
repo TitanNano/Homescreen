@@ -69,7 +69,7 @@ class SettingsEntryViewHolder(itemView: View) : LauncherEntryViewHolder(itemView
                 .iconConfigDao()
                 .addConfig(config)
 
-            LauncherEntryManager.get(itemView.context).assembleEntries().join()
+            LauncherEntryManager.get(itemView.context).assembleEntriesAsync().await()
         }
     }
 

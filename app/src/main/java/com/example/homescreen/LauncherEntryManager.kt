@@ -15,6 +15,7 @@ class LauncherEntryManager(val context: Context) {
     private val readyCallbackList: MutableList<suspend () -> Unit> = mutableListOf()
     private val entitiesChangedCallbackList: MutableList<() -> Unit> = mutableListOf()
     private val adapters = mutableSetOf<WeakReference<LauncherEntryAdapter>>()
+    private val coroutineScope = MainScope()
 
     fun makeLauncherEntryAdapter(context: Context): LauncherEntryAdapter {
         val adapter = LauncherEntryAdapter(this.entries, context)
@@ -32,27 +33,32 @@ class LauncherEntryManager(val context: Context) {
         return adapter
     }
 
-    private fun assembleEntriesAsync(): Deferred<Unit> {
+    fun assembleEntriesAsync(): Deferred<Unit> {
         this.activeAssembleTask?.cancel()
 
-        return runBlocking {
-            async {
-                doAssembleEntries().let {
-                    allEntries.apply {
-                        clear()
-                        addAll(it.first)
-                    }
-                    entries.apply {
-                        clear()
-                        addAll(it.second)
-                    }
+        return coroutineScope.async(Dispatchers.IO) {
+            doAssembleEntriesAsync().await().let {
+                allEntries.apply {
+                    clear()
+                    addAll(it.first)
                 }
-
-                doSortEntries()
-
-                notifyEntitiesChangedAsync()
-                notifyEntriesReady()
+                entries.apply {
+                    clear()
+                    addAll(it.second)
+                }
             }
+
+            doSortEntriesAsync().await()
+
+            launch {
+                notifyEntitiesChangedAsync().await()
+            }
+
+            launch {
+                notifyEntriesReadyAsync().await()
+            }
+
+            Unit
         }.also {
             it.invokeOnCompletion { throwable ->
                 throwable?.let { t -> throw t }
@@ -62,14 +68,12 @@ class LauncherEntryManager(val context: Context) {
         }
     }
 
-    fun assembleEntries(): Job = this.assembleEntriesAsync()
-
-    private fun notifyEntitiesChangedAsync() = MainScope().async {
+    private fun notifyEntitiesChangedAsync() = coroutineScope.async(Dispatchers.IO) {
         adapters.forEach { it.get()?.notifyDataSetChanged() }
         entitiesChangedCallbackList.forEach { it() }
     }
 
-    private suspend fun doAssembleEntries() = withContext(Dispatchers.IO) {
+    private fun doAssembleEntriesAsync() = coroutineScope.async(Dispatchers.IO) {
 
         val (applicationList, shortcutList) = kotlin.run {
             val applicationList = async { LauncherUtil.getInstalledApplications(context) }
@@ -93,20 +97,18 @@ class LauncherEntryManager(val context: Context) {
         })
     }
 
-    fun sortEntries(): Deferred<Unit> {
+    fun sortEntriesAsync(): Deferred<Unit> {
         this.activeSortTask?.cancel()
 
-        return runBlocking {
-            async {
-                doSortEntries()
+        return coroutineScope.async {
+                doSortEntriesAsync().await()
                 notifyEntitiesChangedAsync().await()
-            }
         }.also {
             this.activeSortTask = it
         }
     }
 
-    private suspend fun doSortEntries() = withContext(Dispatchers.Default) {
+    private fun doSortEntriesAsync() = coroutineScope.async(Dispatchers.IO) {
         val rawTotalUsage = UsageDatabase.get(context).entryDao()
             .getAllUsage(System.currentTimeMillis() - MONTH_3)
         val rawCurrentUsage = UsageDatabase.get(context).entryDao()
@@ -129,13 +131,12 @@ class LauncherEntryManager(val context: Context) {
         entries.onEach {
             it.score = statsMap.get(it.id) ?: 0
         }.sortByDescending { it.score }
-
     }
 
     fun addShortcut(info: ShortcutInfo): Job {
         this.entries.add(LauncherEntry.fromShortcutInfo(info, context))
 
-        return this.sortEntries()
+        return this.sortEntriesAsync()
     }
 
     fun entriesReady(callback: suspend () -> Unit) {
@@ -146,7 +147,7 @@ class LauncherEntryManager(val context: Context) {
         this.entitiesChangedCallbackList.add(callback)
     }
 
-    private suspend fun notifyEntriesReady() {
+    private fun notifyEntriesReadyAsync() = coroutineScope.async(Dispatchers.IO) {
         readyCallbackList.forEach { it() }
     }
 
@@ -177,6 +178,10 @@ class LauncherEntryManager(val context: Context) {
         }
     }
 
+    protected fun finalize() {
+        this.coroutineScope.cancel()
+    }
+
     companion object {
         private var instance: LauncherEntryManager? = null
 
@@ -189,7 +194,7 @@ class LauncherEntryManager(val context: Context) {
             return LauncherEntryManager(context).also {
                 this.instance = it
 
-                it.assembleEntries()
+                it.assembleEntriesAsync()
             }
         }
     }

@@ -10,13 +10,16 @@ import com.example.homescreen.LauncherEntry
 import com.example.homescreen.LauncherEntryManager
 import com.example.homescreen.db.UsageDatabase
 import com.example.homescreen.db.UsageEntry
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 
 class LaunchApplication(private val context: Context, val item: LauncherEntry, private val bounds: Rect, val options: ActivityOptions):
     AsyncTask<Unit, Int, Boolean>(), ICancelTask {
 
     private fun recordUsage(item: LauncherEntry) {
         UsageDatabase.get(this.context).entryDao().addUsage(UsageEntry(item.id))
-        LauncherEntryManager.get(this.context).sortEntries()
+        LauncherEntryManager.get(this.context).sortEntriesAsync()
     }
 
     override fun doInBackground(vararg params: Unit?): Boolean {
