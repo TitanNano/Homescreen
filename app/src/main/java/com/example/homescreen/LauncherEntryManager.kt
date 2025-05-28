@@ -69,7 +69,7 @@ class LauncherEntryManager(val context: Context) {
         }
     }
 
-    private fun notifyEntitiesChangedAsync() = coroutineScope.async(Dispatchers.IO) {
+    private fun notifyEntitiesChangedAsync() = coroutineScope.async(Dispatchers.Main) {
         adapters.forEach { it.get()?.notifyDataSetChanged() }
         entitiesChangedCallbackList.forEach { it() }
     }

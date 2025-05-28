@@ -12,6 +12,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -41,6 +42,12 @@ import com.example.homescreen.databinding.LauncherEntryBinding
 import com.example.homescreen.databinding.SearchFragmentBinding
 import com.example.homescreen.tasks.LaunchApplication
 import eightbitlab.com.blurview.BlurView
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -55,6 +62,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     val searchResultsAdapter = SearchResultAdapter(this.searchResults)
     private val itemCount = 4
     private lateinit var overlayColorDrawable: ColorDrawable
+    private lateinit var wallpaper: Deferred<Drawable?>
     val overlayColor: ObservableInt = ObservableInt(0)
     val keyboardHeight: ObservableInt = ObservableInt(0)
     var enableExitAnimation = false
@@ -78,6 +86,31 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     ): View {
         this.binding = SearchFragmentBinding.inflate(inflater)
         this.binding.fragment = this
+
+        if (!Environment.isExternalStorageManager()) {
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                Log.e("search_pull", "external storage permission was not granted ${result}")
+
+                this.setupBlurView()
+            }.apply {
+                val uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID)
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri)
+
+                launch(intent)
+            }
+
+            this.wallpaper = runBlocking {
+                async {
+                    null
+                }
+            }
+        } else {
+            this.wallpaper = runBlocking {
+                async {
+                    prepareWallpaper()
+                }
+            }
+        }
 
         return this.binding.root
     }
@@ -110,30 +143,28 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
 
         })
 
-        if (!Environment.isExternalStorageManager()) {
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                Log.e("search_pull", "external storage permission was not granted ${result}")
-
-                this.setupBlurView()
-            }.apply {
-                val uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID)
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri)
-
-                launch(intent)
-            }
-
-            return
-        }
-
         this.setupBlurView()
     }
 
-    @SuppressLint("MissingPermission")
-    fun setupBlurView() {
+    private fun setupBlurView() {
         val decorView = this.requireActivity().window.decorView
-        val wallpaperManager = requireContext().getSystemService(WallpaperManager::class.java)
+        val blurRoot = this.binding.blurRoot
+        val controller = blurRoot.setupWith(decorView as ViewGroup)
 
-        var frame = this.displayFrame()
+        runBlocking {
+            launch {
+                val wallpaper = wallpaper.await()
+
+                controller.setFrameClearDrawable(wallpaper)
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun prepareWallpaper(): Drawable = withContext(Dispatchers.IO) {
+        val wallpaperManager = requireContext().getSystemService(WallpaperManager::class.java)
+        var frame = displayFrame()
+
         // not considering the status bar hight at the moment
         val statusBar = 0//frame.top + 100
 
@@ -180,7 +211,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
                 this.bounds = bounds
             }
 
-        this.binding.blurRoot.setupWith(decorView as ViewGroup).setFrameClearDrawable(wallpaper)
+        wallpaper
     }
 
     fun enterAnimation(reverse: Boolean): AnimatorSet {
@@ -327,7 +358,6 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
         @BindingAdapter("blurOverlayColor")
         @JvmStatic
         fun updateOverlayColor(view: BlurView, color: Int) {
-            Log.i("pull_search.overlay", "updating overlay color: $color")
             view.setOverlayColor(color)
         }
 

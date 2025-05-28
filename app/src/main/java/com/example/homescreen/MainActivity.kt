@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import com.example.homescreen.databinding.MainActivityBinding
 import com.example.homescreen.views.SearchFragmentAdapter
+import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 
 class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
 
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
 
         this.launcherFragment = fragmentFactory.instantiate(classLoader)
         this.binding = MainActivityBinding.inflate(this.layoutInflater)
+        this.requireSearchFragment()
 
         setContentView(this.binding.root)
 
@@ -50,7 +52,7 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
+
     override fun onResume() {
         super.onResume()
 
