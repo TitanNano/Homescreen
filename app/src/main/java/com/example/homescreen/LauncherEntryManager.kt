@@ -1,13 +1,17 @@
 package com.example.homescreen
 
+import android.app.ActivityOptions
 import android.content.Context
+import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
+import android.graphics.Rect
 import com.example.homescreen.db.UsageDatabase
+import com.example.homescreen.db.UsageEntry
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import kotlin.math.roundToInt
 
-class LauncherEntryManager(val context: Context) {
+class LauncherEntryManager(val context: Context, private val coroutineScope: CoroutineScope) {
     private val entries: MutableList<LauncherEntry> = mutableListOf()
     private val allEntries: MutableList<LauncherEntry> = mutableListOf()
 
@@ -16,10 +20,13 @@ class LauncherEntryManager(val context: Context) {
     private val readyCallbackList: MutableList<suspend () -> Unit> = mutableListOf()
     private val entitiesChangedCallbackList: MutableList<() -> Unit> = mutableListOf()
     private val adapters = mutableSetOf<WeakReference<LauncherEntryAdapter>>()
-    private val coroutineScope = MainScope()
+
+    init {
+        assembleEntriesAsync().start()
+    }
 
     fun makeLauncherEntryAdapter(context: Context): LauncherEntryAdapter {
-        val adapter = LauncherEntryAdapter(this.entries, context)
+        val adapter = LauncherEntryAdapter(this.entries, launcherEntryManager = this, context, coroutineScope)
 
         this.adapters.add(WeakReference(adapter))
 
@@ -27,7 +34,7 @@ class LauncherEntryManager(val context: Context) {
     }
 
     fun makeSettingsEntryAdapter(context: Context): SettingsEntryAdapter {
-        val adapter = SettingsEntryAdapter(this.allEntries, context)
+        val adapter = SettingsEntryAdapter(this.allEntries, launcherEntryManager = this, context, coroutineScope)
 
         this.adapters.add(WeakReference(adapter))
 
@@ -177,25 +184,31 @@ class LauncherEntryManager(val context: Context) {
         }
     }
 
-    protected fun finalize() {
-        this.coroutineScope.cancel()
+    private fun recordUsage(item: LauncherEntry, context: Context, coroutineScope: CoroutineScope) = coroutineScope.async(Dispatchers.IO) {
+        UsageDatabase.get(context).entryDao().addUsage(UsageEntry(item.id))
+        sortEntriesAsync().await()
+    }
+
+    fun launchApplication(item: LauncherEntry, bounds: Rect, options: ActivityOptions, context: Context, scope: CoroutineScope) = scope.async(Dispatchers.Main) {
+        val manager = context.getSystemService(LauncherApps::class.java) ?: return@async
+
+        item.shortcutInfo?.let {
+            manager.startShortcut(it, bounds, options.toBundle())
+            recordUsage(item, context, scope).await()
+
+            return@async
+        }
+
+        if (item.componentName == null) {
+            return@async
+        }
+
+        manager.startMainActivity(item.componentName, android.os.Process.myUserHandle(), bounds, options.toBundle())
+        recordUsage(item, context, scope).await()
     }
 
     companion object {
-        private var instance: LauncherEntryManager? = null
-
         const val HOURS_24: Long = 86400 * 1000
         const val MONTH_3: Long = HOURS_24 * 30 * 3
-
-        fun get(context: Context): LauncherEntryManager {
-            this.instance?.let { return it }
-
-            return LauncherEntryManager(context).also {
-                this.instance = it
-
-                @Suppress("DeferredResultUnused")
-                it.assembleEntriesAsync()
-            }
-        }
     }
 }

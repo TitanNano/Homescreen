@@ -40,8 +40,8 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homescreen.databinding.LauncherEntryBinding
 import com.example.homescreen.databinding.SearchFragmentBinding
-import com.example.homescreen.tasks.LaunchApplication
 import eightbitlab.com.blurview.BlurView
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -52,14 +52,13 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 
-class SearchFragment : Fragment(R.layout.search_fragment) {
+class SearchFragment(private val launcherEntryManager: LauncherEntryManager, private val coroutineScope: CoroutineScope) : Fragment(R.layout.search_fragment) {
 
     private lateinit var binding: SearchFragmentBinding
-    private lateinit var entryManager: LauncherEntryManager
 
     var searchText: String = ""
     private val searchResults: MutableList<LauncherEntry> = mutableListOf()
-    val searchResultsAdapter = SearchResultAdapter(this.searchResults)
+    val searchResultsAdapter = SearchResultAdapter(this.searchResults, launcherEntryManager)
     private val itemCount = 4
     private lateinit var overlayColorDrawable: ColorDrawable
     private lateinit var wallpaper: Deferred<Drawable?>
@@ -119,10 +118,8 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        this.entryManager = LauncherEntryManager.get(this.requireContext()).also {
-            it.onEntitiesChanged {
-                this.searchEntries()
-            }
+        this.launcherEntryManager.onEntitiesChanged {
+            this.searchEntries()
         }
 
         this.overlayColorDrawable = ResourcesCompat.getDrawable(
@@ -270,7 +267,7 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
             return
         }
 
-        this.searchResults.addAll(this.entryManager.searchEntries(this.searchText).let {
+        this.searchResults.addAll(this.launcherEntryManager.searchEntries(this.searchText).let {
             it.slice(0 until min(it.size, this.itemCount))
         })
 
@@ -369,8 +366,9 @@ class SearchFragment : Fragment(R.layout.search_fragment) {
     }
 }
 
-class SearchResultAdapter(private val entries: MutableList<LauncherEntry>) :
+class SearchResultAdapter(private val entries: MutableList<LauncherEntry>, private val launcherEntryManager: LauncherEntryManager) :
     RecyclerView.Adapter<SearchResultViewHolder>() {
+
     init {
         setHasStableIds(true)
     }
@@ -378,7 +376,7 @@ class SearchResultAdapter(private val entries: MutableList<LauncherEntry>) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchResultViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.launcher_entry, null)
 
-        return SearchResultViewHolder(view)
+        return SearchResultViewHolder(view, launcherEntryManager)
     }
 
     override fun getItemCount(): Int {
@@ -404,8 +402,9 @@ class SearchResultAdapter(private val entries: MutableList<LauncherEntry>) :
     }
 }
 
-class SearchResultViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+class SearchResultViewHolder(itemView: View, private val launcherEntryManager: LauncherEntryManager) : RecyclerView.ViewHolder(itemView) {
     private val binding: LauncherEntryBinding = LauncherEntryBinding.bind(itemView)
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     var item: LauncherEntry?
         get() {
@@ -444,6 +443,6 @@ class SearchResultViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
             blurLauncher(0f)
         }
 
-        LaunchApplication(view.context, item, bounds, options).execute()
+        launcherEntryManager.launchApplication(item, bounds, options, view.context, coroutineScope).start()
     }
 }

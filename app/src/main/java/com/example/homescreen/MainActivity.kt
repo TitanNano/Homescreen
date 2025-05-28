@@ -1,10 +1,7 @@
 package com.example.homescreen
 
 import android.animation.AnimatorSet
-import android.annotation.TargetApi
 import android.content.pm.LauncherApps
-import android.os.AsyncTask
-import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
@@ -12,22 +9,22 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import com.example.homescreen.databinding.MainActivityBinding
 import com.example.homescreen.views.SearchFragmentAdapter
-import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 
 class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
-
-    private val activeTasks: MutableList<ICancelTask> = mutableListOf()
-
     private lateinit var binding: MainActivityBinding
     private lateinit var fragmentFactory: LauncherFragmentFactory
     private lateinit var launcherFragment: LauncherFragment
+    private val coroutineScope = MainScope()
+    private val launcherEntryManager = LauncherEntryManager(this, coroutineScope)
 
     private var searchFragment: SearchFragment? = null
 
     public val fragmentViewId get() = this.binding.root.id
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        this.fragmentFactory = LauncherFragmentFactory(this)
+        this.fragmentFactory = LauncherFragmentFactory(coroutineScope, launcherEntryManager,  this)
         this.supportFragmentManager.fragmentFactory = this.fragmentFactory
 
         super.onCreate(savedInstanceState)
@@ -47,7 +44,7 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
     override fun onStart() {
         super.onStart()
 
-        LauncherEntryManager.get(this).entriesReady {
+        launcherEntryManager.entriesReady {
             this.launcherFragment.scrollToBottom()
         }
     }
@@ -71,7 +68,7 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
         }
 
         request.shortcutInfo?.let {
-            LauncherEntryManager.get(this).addShortcut(it)
+            launcherEntryManager.addShortcut(it)
                 .invokeOnCompletion {
                     this.launcherFragment.scrollToTop()
                 }
@@ -81,19 +78,8 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
     }
 
     override fun onDestroy() {
+        coroutineScope.cancel()
         super.onDestroy()
-
-        this.activeTasks.forEach {
-            if (it.getStatus() != AsyncTask.Status.RUNNING) {
-                return@forEach
-            }
-
-            it.cancel(true)
-        }
-    }
-
-    fun getLauncherEntryManager(): LauncherEntryManager {
-        return LauncherEntryManager.get(this)
     }
 
     fun blurLauncher(radius: Float) {

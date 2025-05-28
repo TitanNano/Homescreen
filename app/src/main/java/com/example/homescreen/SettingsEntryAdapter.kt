@@ -1,6 +1,7 @@
 package com.example.homescreen
 
 import android.content.Context
+import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,8 +15,10 @@ import kotlinx.coroutines.async
 
 class SettingsEntryAdapter(
     entries: MutableList<LauncherEntry>,
-    context: Context
-) : LauncherEntryAdapter(entries, context) {
+    launcherEntryManager: LauncherEntryManager,
+    context: Context,
+    coroutineScope: CoroutineScope,
+) : LauncherEntryAdapter(entries, launcherEntryManager, context, coroutineScope) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
@@ -26,7 +29,7 @@ class SettingsEntryAdapter(
             false
         )
 
-        return SettingsEntryViewHolder(view.root)
+        return SettingsEntryViewHolder(view.root, launcherEntryManager, coroutineScope)
     }
 
     override fun getItemCount(): Int {
@@ -52,7 +55,7 @@ class SettingsEntryAdapter(
     }
 }
 
-class SettingsEntryViewHolder(itemView: View) : LauncherEntryViewHolder(itemView) {
+class SettingsEntryViewHolder(itemView: View, launcherEntryManager: LauncherEntryManager, coroutineScope: CoroutineScope) : LauncherEntryViewHolder(itemView, launcherEntryManager, coroutineScope) {
     init {
         this.itemView.setOnClickListener(this)
     }
@@ -69,7 +72,7 @@ class SettingsEntryViewHolder(itemView: View) : LauncherEntryViewHolder(itemView
                 .iconConfigDao()
                 .addConfig(config)
 
-            LauncherEntryManager.get(itemView.context).assembleEntriesAsync().await()
+            launcherEntryManager.assembleEntriesAsync().await()
         }
     }
 

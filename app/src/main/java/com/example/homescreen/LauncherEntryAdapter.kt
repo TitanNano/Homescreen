@@ -15,19 +15,19 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homescreen.db.UsageDatabase
-import com.example.homescreen.tasks.LaunchApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import java.lang.Integer.min
 
-open class LauncherEntryViewHolder(itemView: View) : RecyclerView.ViewHolder((itemView)), View.OnClickListener, View.OnLongClickListener,
-    PopupMenu.OnMenuItemClickListener {
+open class LauncherEntryViewHolder(
+    itemView: View,
+    protected val launcherEntryManager: LauncherEntryManager,
+    private val coroutineScope: CoroutineScope
+): RecyclerView.ViewHolder((itemView)), View.OnClickListener, View.OnLongClickListener, PopupMenu.OnMenuItemClickListener {
     private var binding = DataBindingUtil.getBinding<ViewDataBinding>(this.itemView)
 
     var item: LauncherEntry? = null
-        get() = field
-
         set(value) {
             if (this.binding != null) {
                 this.binding!!.setVariable(BR.item, value)
@@ -59,7 +59,7 @@ open class LauncherEntryViewHolder(itemView: View) : RecyclerView.ViewHolder((it
             bounds.width()
         )
 
-        LaunchApplication(view.context, item, bounds, options).execute()
+        launcherEntryManager.launchApplication(item, bounds, options, view.context, coroutineScope).start()
     }
 
     override fun onLongClick(v: View?): Boolean {
@@ -99,13 +99,13 @@ open class LauncherEntryViewHolder(itemView: View) : RecyclerView.ViewHolder((it
             hidden = true
         } ?: return false
 
-        CoroutineScope(Dispatchers.IO).async {
+        coroutineScope.async(Dispatchers.IO) {
             UsageDatabase.get(itemView.context)
                 .iconConfigDao()
                 .addConfig(config)
 
-            LauncherEntryManager.get(itemView.context).assembleEntriesAsync().await()
-        }
+            launcherEntryManager.assembleEntriesAsync().await()
+        }.start()
 
         return true
     }
@@ -143,7 +143,9 @@ open class LauncherEntryViewHolder(itemView: View) : RecyclerView.ViewHolder((it
 
 open class LauncherEntryAdapter(
     protected val entries: MutableList<LauncherEntry>,
-    val context: Context
+    protected val launcherEntryManager: LauncherEntryManager,
+    val context: Context,
+    protected val coroutineScope: CoroutineScope
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     init {
@@ -160,7 +162,7 @@ open class LauncherEntryAdapter(
             false
         )
 
-        return LauncherEntryViewHolder(view.root)
+        return LauncherEntryViewHolder(view.root, launcherEntryManager, coroutineScope)
     }
 
     override fun getItemCount(): Int {

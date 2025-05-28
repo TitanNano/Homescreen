@@ -13,7 +13,7 @@ import com.example.homescreen.databinding.LauncherFragmentBinding
 import com.example.homescreen.views.SearchFragmentAdapter
 import kotlin.math.roundToInt
 
-class LauncherFragment(private val pullToSearchAdapter: SearchFragmentAdapter) : Fragment() {
+class LauncherFragment(private val pullToSearchAdapter: SearchFragmentAdapter, private val launcherEntryManager: LauncherEntryManager) : Fragment() {
 
     private var grid: RecyclerView? = null
     private lateinit var binding: LauncherFragmentBinding
@@ -45,7 +45,7 @@ class LauncherFragment(private val pullToSearchAdapter: SearchFragmentAdapter) :
 
         this.grid = this.binding.appgrid.also {
             it.adapter = this.context?.let { context ->
-                (context as MainActivity).getLauncherEntryManager()
+                launcherEntryManager
                     .makeLauncherEntryAdapter(context)
             }
         }
