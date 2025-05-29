@@ -3,21 +3,12 @@ package com.example.homescreen
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.app.ActivityOptions
-import android.app.WallpaperManager
 import android.content.Context
-import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Rect
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
 import android.text.Editable
 import android.util.Log
 import android.view.KeyEvent
@@ -27,12 +18,9 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsAnimation
 import android.view.inputmethod.InputMethodManager
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.graphics.scale
 import androidx.core.view.WindowInsetsCompat
 import androidx.databinding.BindingAdapter
 import androidx.databinding.ObservableInt
@@ -40,16 +28,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.example.homescreen.databinding.LauncherEntryBinding
 import com.example.homescreen.databinding.SearchFragmentBinding
-import eightbitlab.com.blurview.BlurView
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 
 class SearchFragment(private val launcherEntryManager: LauncherEntryManager, private val coroutineScope: CoroutineScope) : Fragment(R.layout.search_fragment) {
@@ -60,9 +41,8 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
     private val searchResults: MutableList<LauncherEntry> = mutableListOf()
     val searchResultsAdapter = SearchResultAdapter(this.searchResults, launcherEntryManager)
     private val itemCount = 4
-    private lateinit var overlayColorDrawable: ColorDrawable
-    private lateinit var wallpaper: Deferred<Drawable?>
-    val overlayColor: ObservableInt = ObservableInt(0)
+    lateinit var overlayColorDrawable: ColorDrawable
+    val overlayAlpha = ObservableInt(0)
     val keyboardHeight: ObservableInt = ObservableInt(0)
     var enableExitAnimation = false
     var isCanceled = false
@@ -85,31 +65,6 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
     ): View {
         this.binding = SearchFragmentBinding.inflate(inflater)
         this.binding.fragment = this
-
-        if (!Environment.isExternalStorageManager()) {
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                Log.e("search_pull", "external storage permission was not granted ${result}")
-
-                this.setupBlurView()
-            }.apply {
-                val uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID)
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri)
-
-                launch(intent)
-            }
-
-            this.wallpaper = runBlocking {
-                async {
-                    null
-                }
-            }
-        } else {
-            this.wallpaper = runBlocking {
-                async {
-                    prepareWallpaper()
-                }
-            }
-        }
 
         return this.binding.root
     }
@@ -139,100 +94,19 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
             }
 
         })
-
-        this.setupBlurView()
-    }
-
-    private fun setupBlurView() {
-        val decorView = this.requireActivity().window.decorView
-        val blurRoot = this.binding.blurRoot
-        val controller = blurRoot.setupWith(decorView as ViewGroup)
-
-        runBlocking {
-            launch {
-                val wallpaper = wallpaper.await()
-
-                controller.setFrameClearDrawable(wallpaper)
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    suspend fun prepareWallpaper(): Drawable = withContext(Dispatchers.IO) {
-        val wallpaperManager = requireContext().getSystemService(WallpaperManager::class.java)
-        var frame = displayFrame()
-
-        // not considering the status bar hight at the moment
-        val statusBar = 0//frame.top + 100
-
-        val wallpaper = (wallpaperManager.drawable as BitmapDrawable).bitmap
-            .let {
-                val multiply = wallpaperManager.desiredMinimumHeight / it.height.toFloat()
-                val width = (it.width * multiply).roundToInt()
-                val height = (it.height * multiply).roundToInt()
-
-
-                it.scale(width, height)
-            }
-            .let {
-                val width = frame.width()
-                val height = it.height
-                // approximation of the zoom in on Xperia 10 III
-                val zoomInX = (width * 0.045).roundToInt()
-                // approximation of the zoom in on Xperia 10 III
-                val zoomInY = (height * 0.0666).roundToInt()
-
-                Bitmap.createBitmap(
-                    it,
-                    zoomInX,
-                    zoomInY,
-                    width - (zoomInX * 2),
-                    height - (zoomInY * 2)
-                )
-                    .scale(width, height)
-                    .let {
-                        Bitmap.createBitmap(it, 0, statusBar, it.width, it.height - statusBar)
-                    }.toDrawable(resources)
-            }.apply {
-                val scaleFactor = 5.625
-                val height = frame.height()
-                val width = frame.width()
-
-                val bounds = Rect(0, 0, width, height).apply {
-                    left = (left / scaleFactor).roundToInt()
-                    top = (top / scaleFactor).roundToInt()
-                    right = (right / scaleFactor).roundToInt()
-                    bottom = (bottom / scaleFactor).roundToInt()
-                }
-
-                this.bounds = bounds
-            }
-
-        wallpaper
     }
 
     fun enterAnimation(reverse: Boolean): AnimatorSet {
         val duration: Long = 400
 
-        var blurStart = 0.001f
-        var blurEnd = 10f
         var searchStart = -100f * resources.displayMetrics.density
         var searchEnd = 0f * resources.displayMetrics.density
         var bgStart = 0
-        var bgEnd = 127
+        var bgEnd = 150
 
         if (reverse) {
-            blurStart = blurEnd.also { blurEnd = blurStart }
             searchStart = searchEnd.also { searchEnd = searchStart }
             bgStart = bgEnd.also { bgEnd = bgStart }
-        }
-
-        val blur = ValueAnimator.ofFloat(blurStart, blurEnd).apply {
-            addUpdateListener { updatedAnimation ->
-                binding.blurRoot.setBlurRadius(updatedAnimation.animatedValue as Float)
-            }
-
-            this.duration = duration
         }
 
         val search = ValueAnimator.ofFloat(searchStart, searchEnd).apply {
@@ -253,7 +127,7 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
         }
 
         return AnimatorSet().also { anim ->
-            anim.playTogether(blur, search, bg)
+            anim.playTogether(search, bg)
         }
     }
 
@@ -317,20 +191,12 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
         this.searchResults.clear()
     }
 
-    fun displayFrame(): Rect {
-        val frame = Rect()
-
-        requireActivity().window.decorView.getWindowVisibleDisplayFrame(frame)
-
-        return frame
-    }
-
     fun updateOverlayAlpha(alpha: Int) {
         this.overlayColorDrawable.let {
             it.alpha = alpha
             it.color
         }.let {
-            this.overlayColor.set(it)
+            this.overlayAlpha.set(it)
         }
     }
 
@@ -338,6 +204,12 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
     fun updateKeyboardHeight(insets: WindowInsets) {
         val compatInsets = WindowInsetsCompat.toWindowInsetsCompat(insets)
         val height = compatInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+
+        // navigate back when the keyboard moves out of view
+        if (height < this.keyboardHeight.get()) {
+            Log.i("SearchView", "keyboard is hiding")
+            this.context?.let{ it as MainActivity }?.supportFragmentManager?.popBackStackImmediate()
+        }
 
         this.keyboardHeight.set(height)
     }
@@ -352,13 +224,7 @@ class SearchFragment(private val launcherEntryManager: LauncherEntryManager, pri
     }
 
     companion object {
-        @BindingAdapter("blurOverlayColor")
-        @JvmStatic
-        fun updateOverlayColor(view: BlurView, color: Int) {
-            view.setOverlayColor(color)
-        }
-
-        @BindingAdapter("app:onKeyListener")
+        @BindingAdapter("onKeyListener")
         @JvmStatic
         fun setOnKeyListener(view: AppCompatEditText, listener: View.OnKeyListener) {
             view.setOnKeyListener(listener)

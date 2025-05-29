@@ -18,7 +18,7 @@
         android:paddingLeft="16dp"
         android:paddingTop="0dp"
         android:paddingRight="16dp"
-        android:paddingBottom="24dp"
+        android:paddingBottom="0dp"
         app:layoutManager=".GridLayoutManager"
         app:reverseLayout="true"
         app:spanCount="4"
