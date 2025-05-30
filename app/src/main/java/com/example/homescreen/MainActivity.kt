@@ -16,14 +16,15 @@ class MainActivity : AppCompatActivity(), SearchFragmentAdapter {
     private lateinit var binding: MainActivityBinding
     private lateinit var fragmentFactory: LauncherFragmentFactory
     private lateinit var launcherFragment: LauncherFragment
+    private lateinit var launcherEntryManager: LauncherEntryManager
     private val coroutineScope = MainScope()
-    private val launcherEntryManager = LauncherEntryManager(this, coroutineScope)
 
     private var searchFragment: SearchFragment? = null
 
     public val fragmentViewId get() = this.binding.root.id
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        this.launcherEntryManager = LauncherEntryManager(this, coroutineScope)
         this.fragmentFactory = LauncherFragmentFactory(coroutineScope, launcherEntryManager,  this)
         this.supportFragmentManager.fragmentFactory = this.fragmentFactory
 

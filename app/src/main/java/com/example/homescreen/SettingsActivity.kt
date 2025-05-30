@@ -5,15 +5,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.DynamicColors
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 
 class SettingsActivity : AppCompatActivity() {
 
     private val coroutineScope = MainScope()
-    private val launcherEntryManager: LauncherEntryManager = LauncherEntryManager(this, coroutineScope)
+    private lateinit var launcherEntryManager: LauncherEntryManager
     var appList: RecyclerView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        launcherEntryManager = LauncherEntryManager(this, coroutineScope)
         setContentView(R.layout.activity_settings)
 
         DynamicColors.applyToActivityIfAvailable(this)
@@ -22,5 +24,10 @@ class SettingsActivity : AppCompatActivity() {
             this.adapter = launcherEntryManager
                 .makeSettingsEntryAdapter(context)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        coroutineScope.cancel()
     }
 }
